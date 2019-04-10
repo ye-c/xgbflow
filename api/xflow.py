@@ -143,6 +143,37 @@ def calc_feature_dist(train_df, verify_df, tar_fea, val_ls, cutn=10):
     return res
 
 
+def calc_feature_pos_ratio(train_df, verify_df, tar_fea, val_ls, cutn=10):
+    trdata = train_df[['label', tar_fea]]
+    trnum = trdata.shape[0]
+    vedata = verify_df[['label', tar_fea]]
+    venum = vedata.shape[0]
+    res = []
+
+    if not val_ls:
+        maxv = max(trdata[tar_fea].max(), vedata[tar_fea].max())
+        ls1 = [int(i) for i in np.arange(0, maxv, maxv / 10)]
+        ls2 = ls1[1:] + [maxv]
+        val_ls = list(zip(ls1, ls2))
+
+    for v in val_ls:
+        if isinstance(v, list) or isinstance(v, tuple):
+            t1 = trdata.loc[(trdata[tar_fea] > v[0]) & (
+                trdata[tar_fea] <= v[1])]
+            n1 = t1[t1.label == 1].shape[0]
+            t2 = vedata.loc[(vedata[tar_fea] > v[0]) & (
+                vedata[tar_fea] <= v[1])]
+            n2 = t2[t2.label == 1].shape[0]
+        else:
+            t1 = trdata.loc[trdata[tar_fea] == v]
+            n1 = t1[t1.label == 1].shape[0]
+            t2 = vedata.loc[vedata[tar_fea] == v]
+            n2 = t2[t2.label == 1].shape[0]
+        res.append((v, [round(n1 / trnum, 4), round(n2 / venum, 4)]))
+
+    return res
+
+
 def steady_flow(n_est, x_train, y_train, x_test, y_test, x_verify, y_verify):
     print('All feature trainning')
     model = xgb.XGBClassifier(max_depth=3,
