@@ -44,7 +44,7 @@ def score_dist(score, save_as):
     plt.figure(figsize=(8, 6))
     plt.title("Score Distribution")
     plt.bar(x, score_ls, tick_label=cutls[:-1])
-    plt.ylim(0, 0.2)
+    plt.ylim(0, max(score_ls) + 0.05)
     plt.xticks(rotation=45)
     path = '%s_dist.jpg' % save_as
     plt.savefig(path)

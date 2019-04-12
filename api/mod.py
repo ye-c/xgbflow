@@ -1,8 +1,8 @@
 from sklearn.externals import joblib
-import numpy as np
 
 
-def predict_df(model_path, df):
-    model = joblib.load(model_path)
-    y_pred = [x[1] for x in model.predict_proba(df)]
+def predict(model, data):
+    if isinstance(model, str):
+        model = joblib.load(model)
+    y_pred = model.predict_proba(data)[:, 1]
     return y_pred

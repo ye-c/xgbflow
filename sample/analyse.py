@@ -4,7 +4,6 @@ from xgbflow.utils.markitdown import MarkitDown
 def ratio(dfls=[], keys=['train', 'verify']):
     if not isinstance(dfls, list):
         dfls = [dfls]
-    md = MarkitDown()
     res = []
     for name, df in zip(keys, dfls):
         shape = df.shape
@@ -16,9 +15,11 @@ def ratio(dfls=[], keys=['train', 'verify']):
         pnr = '1:%.1f' % (neg / pos) if pos != 0 else 'nan'
         res.append([name, shape, '%s (%s)' %
                     (pos, rp), '%s (%s)' % (neg, rn), pnr])
-    heads = ['/', 'shape', 'pos', 'neg', 'pos:neg']
-    md.table(heads, res)
-    md.show()
+    header = ['/', 'shape', 'pos', 'neg', 'pos:neg']
+    # md = MarkitDown()
+    # md.table(header, res)
+    # md.show()
+    return header, res
 
 
 def coverage(dfls=[], cols=[], dfname=['train', 'verify']):
@@ -26,7 +27,6 @@ def coverage(dfls=[], cols=[], dfname=['train', 'verify']):
         dfls = [dfls]
     if not isinstance(cols, list):
         cols = [cols]
-    md = MarkitDown()
     res = []
     for c in cols:
         tmp = [c]
@@ -34,6 +34,8 @@ def coverage(dfls=[], cols=[], dfname=['train', 'verify']):
             null_num = df[df[c] == -1].shape[0]
             tmp.append('%.0f%%' % (100 - null_num * 100 / df.shape[0]))
         res.append(tmp)
-    heads = ['column'] + dfname
-    md.table(heads, res)
-    md.show()
+    header = ['column'] + dfname
+    # md = MarkitDown()
+    # md.table(header, res)
+    # md.show()
+    return header, res

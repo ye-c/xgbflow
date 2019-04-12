@@ -7,37 +7,38 @@ from xgbflow.utils.markitdown import MarkitDown
 from sklearn import metrics
 
 
-def classifier_train(x_train, y_train, x_test, y_test, x_verify, y_verify, params={}):
-    model = xgb.XGBClassifier(max_depth=3,
-                              learning_rate=0.1,
-                              n_estimators=50,
-                              # verbosity=1,
-                              objective='binary:logistic',
-                              booster='gbtree',
-                              # n_jobs=1,
-                              # nthread=None,
-                              gamma=0.5,
-                              min_child_weight=2,
-                              max_delta_step=0,
-                              subsample=0.85,
-                              # colsample_bytree=1,
-                              # colsample_bylevel=1,
-                              # colsample_bynode=1,
-                              reg_alpha=30,
-                              reg_lambda=15,
-                              scale_pos_weight=3,
-                              # base_score=0.5,
-                              # random_state=0,
-                              seed=0,
-                              silent=1)
-    model.fit(x_train, y_train,
-              eval_set=[(x_train, y_train),
-                        (x_test, y_test),
-                        (x_verify, y_verify)],
-              eval_metric='auc',
-              # early_stopping_rounds=10,
-              )
-    return model
+def classifier_train(x_train, y_train, x_test, y_test, x_verify, y_verify, classifier=None):
+    if not classifier:
+        classifier = xgb.XGBClassifier(max_depth=3,
+                                       learning_rate=0.1,
+                                       n_estimators=50,
+                                       # verbosity=1,
+                                       objective='binary:logistic',
+                                       booster='gbtree',
+                                       # n_jobs=1,
+                                       # nthread=None,
+                                       gamma=0.5,
+                                       min_child_weight=2,
+                                       max_delta_step=0,
+                                       subsample=0.85,
+                                       # colsample_bytree=1,
+                                       # colsample_bylevel=1,
+                                       # colsample_bynode=1,
+                                       reg_alpha=30,
+                                       reg_lambda=15,
+                                       scale_pos_weight=3,
+                                       # base_score=0.5,
+                                       # random_state=0,
+                                       seed=0,
+                                       silent=1)
+    classifier.fit(x_train, y_train,
+                   eval_set=[(x_train, y_train),
+                             (x_test, y_test),
+                             (x_verify, y_verify)],
+                   eval_metric='auc',
+                   # early_stopping_rounds=10,
+                   )
+    return classifier
 
 
 def classifier_verify(model, x_train, y_train, x_test, y_test, x_verify, y_verify, draw_out=False, title='title'):
@@ -47,7 +48,7 @@ def classifier_verify(model, x_train, y_train, x_test, y_test, x_verify, y_verif
         ('测试集', x_test, y_test),
         ('验证集', x_verify, y_verify),
     ]:
-        y_pred = [x[1] for x in model.predict_proba(data)]
+        y_pred = model.predict_proba(data)[:, 1]
         aucks, plts = calc_aucks(label, y_pred,
                                  is_draw=draw_out,
                                  title=title,
