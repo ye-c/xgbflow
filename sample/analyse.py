@@ -1,4 +1,5 @@
 from xgbflow.utils.markitdown import MarkitDown
+import numpy as np
 
 
 def ratio(dfls=[], keys=['train', 'verify']):
@@ -39,3 +40,26 @@ def coverage(dfls=[], cols=[], dfname=['train', 'verify']):
     # md.table(header, res)
     # md.show()
     return header, res
+
+
+def predict_pos_ratio(df, fscore='score', fpos='label', cutn=5, cutoff=[]):
+    overnum = df[df[fpos] == 1].shape[0]
+    if overnum == 0:
+        return
+
+    if not cutoff:
+        maxv = round(df[fscore].max(), 4)
+        ls1 = [round(i, 4) for i in np.arange(0, maxv, maxv / cutn)]
+        ls2 = ls1[1:] + [maxv]
+        cutoff = list(zip(ls1, ls2))
+
+    res = []
+    for v in cutoff:
+        if isinstance(v, list) or isinstance(v, tuple):
+            t1 = df.loc[(df[fscore] > v[0]) & (df[fscore] <= v[1])]
+            n1 = t1.loc[t1[fpos] == 1].shape[0]
+        else:
+            t1 = df.loc[df[fscore] == v]
+            n1 = t1.loc[t1[fpos] == 1].shape[0]
+        res.append((v, round(n1 / overnum, 4)))
+    return res
