@@ -52,7 +52,39 @@ def score_dist(score, save_as):
     return path
 
 
+def distribution_histogram(feature, label, data):
+    '''
+    new feature_dist
+    '''
+    size = len(label)
+    total_width = 0.8
+    width = total_width / size * 2
+    x = np.arange(size) - (total_width - width) / size
+
+    hist_num = len(data)
+    for i in range(hist_num):
+        plt.bar(x + width * i, data[i][1], width=width, label=data[i][0])
+
+    xloc = x + (hist_num - 1) / 20
+    plt.xticks(xloc, label, rotation=-20)
+    plt.title(feature)
+    plt.legend()
+    plt.show()
+
+
 def feature_dist(tit, data):
+    '''
+    data = [
+        ('(-inf, -1.0]', [0.079085, 0.000026]),
+        ('(-1.0, 0.0]', [0.297074, 0.362972]),
+        ('(0.0, 1000.0]', [0.028660, 0.020865]),
+        ('(1000.0, 4016.5]', [0.095181, 0.083252]),
+        ('(4016.5, 8200.0]', [0.100482, 0.108707]),
+        ('(8200.0, 25350.0]', [0.199528, 0.205164]),
+        ('(25350.0, 58046896.0]', [0.199991, 0.219013]),
+        ('(58046896.0, inf]', [0.000000, 0.000000]),
+    ]
+    '''
     size = len(data)
     label_list = [_[0] for _ in data]
     a = [_[1][0] for _ in data]

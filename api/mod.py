@@ -1,12 +1,39 @@
 from sklearn.externals import joblib
+from sklearn import metrics
+import xgboost as xgb
 import pandas as pd
 import numpy as np
+
+
+def auc(label, pre):
+    return metrics.roc_auc_score(label, pre)
+
+
+def ks(label, pre):
+    fpr, tpr, thresholds = metrics.roc_curve(label, pre)
+    ks = max(tpr - fpr)
+    return ks
+
+
+def predict_proba(model, data):
+    if isinstance(model, str):
+        model = joblib.load(model)
+    y_pred = model.predict_proba(data)[:, 1]
+    return y_pred
 
 
 def predict(model, data):
     if isinstance(model, str):
         model = joblib.load(model)
-    y_pred = model.predict_proba(data)[:, 1]
+    y_pred = model.predict(data)
+    return y_pred
+
+
+def bst_predict(bst, data):
+    if isinstance(bst, str):
+        bst = xgb.Booster(model_file=bst)
+    dtest = xgb.DMatrix(data)
+    y_pred = bst.predict(dtest)
     return y_pred
 
 

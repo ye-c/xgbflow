@@ -4,6 +4,9 @@ from sklearn.model_selection import train_test_split
 
 
 def ratio_satisfy(df, rat, random_split):
+    '''
+    adjust df's pos/bad = rat
+    '''
     good_df = df[df['label'] == 0]
     bad_df = df[df['label'] == 1]
     split_size = bad_df.shape[0] * rat / good_df.shape[0]
