@@ -36,46 +36,46 @@ def coverage(dfls=[], cols=[], dfname=['train', 'verify']):
     return header, res
 
 
-def predict_pos_ratio(df, fscore='score', fpos='label', cutn=5, cutoff=[]):
-    overnum = df[df[fpos] == 1].shape[0]
-    if overnum == 0:
-        return
+# def predict_pos_ratio(df, fscore='score', fpos='label', cutn=5, cutoff=[]):
+#     overnum = df[df[fpos] == 1].shape[0]
+#     if overnum == 0:
+#         return
 
-    if not cutoff:
-        maxv = round(df[fscore].max(), 4)
-        ls1 = [round(i, 4) for i in np.arange(0, maxv, maxv / cutn)]
-        ls2 = ls1[1:] + [maxv]
-        cutoff = list(zip(ls1, ls2))
+#     if not cutoff:
+#         maxv = round(df[fscore].max(), 4)
+#         ls1 = [round(i, 4) for i in np.arange(0, maxv, maxv / cutn)]
+#         ls2 = ls1[1:] + [maxv]
+#         cutoff = list(zip(ls1, ls2))
 
-    res = []
-    for v in cutoff:
-        if isinstance(v, list) or isinstance(v, tuple):
-            t1 = df.loc[(df[fscore] > v[0]) & (df[fscore] <= v[1])]
-            n1 = t1.loc[t1[fpos] == 1].shape[0]
-        else:
-            t1 = df.loc[df[fscore] == v]
-            n1 = t1.loc[t1[fpos] == 1].shape[0]
-        res.append((v, round(n1 / overnum, 4)))
-    return res
+#     res = []
+#     for v in cutoff:
+#         if isinstance(v, list) or isinstance(v, tuple):
+#             t1 = df.loc[(df[fscore] > v[0]) & (df[fscore] <= v[1])]
+#             n1 = t1.loc[t1[fpos] == 1].shape[0]
+#         else:
+#             t1 = df.loc[df[fscore] == v]
+#             n1 = t1.loc[t1[fpos] == 1].shape[0]
+#         res.append((v, round(n1 / overnum, 4)))
+#     return res
 
 
-def distribution(coldata, colname, cutn=10, cutoff=[]):
-    if not cutoff:
-        maxv = round(coldata.max(), 4)
-        ls1 = [round(i, 4) for i in np.arange(0, maxv, maxv / cutn)]
-        ls2 = ls1[1:] + [maxv]
-        cutoff = list(zip(ls1, ls2))
+# def distribution(coldata, colname, cutn=10, cutoff=[]):
+#     if not cutoff:
+#         maxv = round(coldata.max(), 4)
+#         ls1 = [round(i, 4) for i in np.arange(0, maxv, maxv / cutn)]
+#         ls2 = ls1[1:] + [maxv]
+#         cutoff = list(zip(ls1, ls2))
 
-    df = coldata.to_frame()
-    num = df.shape[0]
-    res = []
-    for v in cutoff:
-        if isinstance(v, list) or isinstance(v, tuple):
-            n1 = df.loc[(df[colname] > v[0]) & (df[colname] <= v[1])].shape[0]
-        else:
-            n1 = df.loc[df[colname] == v].shape[0]
-        res.append((v, round(n1 / num, 4)))
-    return res
+#     df = coldata.to_frame()
+#     num = df.shape[0]
+#     res = []
+#     for v in cutoff:
+#         if isinstance(v, list) or isinstance(v, tuple):
+#             n1 = df.loc[(df[colname] > v[0]) & (df[colname] <= v[1])].shape[0]
+#         else:
+#             n1 = df.loc[df[colname] == v].shape[0]
+#         res.append((v, round(n1 / num, 4)))
+#     return res
 
 
 def calc_feature_dist(train_df, verify_df, tar_fea, cutoff, cutn=10):

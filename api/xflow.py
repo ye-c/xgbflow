@@ -83,7 +83,7 @@ def classifier_verify(model, data, verify=None, draw_out=False, title='title'):
 
 def calc_aucks(label, pre, is_draw=False, title='default', save_as='default'):
     auc = mod.auc(label, pre)
-    ks = mod.ks(label, pre)
+    fpr, tpr, ks = mod.ks(label, pre)
     auc, ks = round(auc, 4), round(ks, 4)
     pltls = []
     if is_draw:

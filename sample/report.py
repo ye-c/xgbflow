@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from xgbflow.api import mod
-from xgbflow.sample import analyse
+# from xgbflow.api import mod
+# from xgbflow.sample import analyse
 
 
 '''
@@ -117,7 +117,7 @@ def bench_and_csi(bench_df_col, act_df_cols=[], bins=[]):
 
 def calc_psi_csi(dfc, bench_bins, bench_bins_rate):
     '''
-    dfc:    df.col
+    dfc: df.col
     bench_bins, bench_bins_rate = benchmark_csi(dfc, bins=[], cutoff=5)
     bench_bins = bench_bins_rate.index.categories.to_tuples().values
     '''
@@ -127,15 +127,15 @@ def calc_psi_csi(dfc, bench_bins, bench_bins_rate):
     psi_csi = (dfc_bins_rate['rate'] - bench_bins_rate['rate']) * \
         np.log(dfc_bins_rate['rate'] / bench_bins_rate['rate'])
     dfc_bins_rate['psi_csi'] = np.around(psi_csi, decimals=4)
-    print(dfc_bins_rate)
+    # print(dfc_bins_rate)
 
-    res = dfc_bins_rate['psi_csi'].sum()
+    psi_res = dfc_bins_rate['psi_csi'].sum()
 
-    if res == float('inf'):
+    if psi_res == float('inf'):
         print('WARNING...')
         print('Column:', dfc.name)
         print('Rate:')
         print(dfc_bins_rate['rate'])
         print('Bins:', bench_bins)
 
-    return res
+    return dfc_bins_rate, psi_res

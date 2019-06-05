@@ -12,7 +12,7 @@ def auc(label, pre):
 def ks(label, pre):
     fpr, tpr, thresholds = metrics.roc_curve(label, pre)
     ks = max(tpr - fpr)
-    return ks
+    return fpr, tpr, ks
 
 
 def predict_proba(model, data):
@@ -51,3 +51,24 @@ def accuracy_print(label, score):
         print('%-30s %-10s %-10s %s' % (i, num, real, '%.2f%%' % rat))
         ret.append((i, '%.2f%%' % rat))
     return ret
+
+
+def dump(model, savePath='./dump.raw.txt'):
+    '''
+    1. 将训练好的模型，用 save_model 方法保存为模型文件；
+    2. 使用 xgb.Booster 读取模型文件，joblib保存的模型文件读取会报错；
+    3. bst.dump_model 方法得到模型描述文件；
+
+    '''
+    try:
+        bst = xgb.Booster({'nthread':4})
+        bst.load_model(model)
+        bst.dump_model(savePath)
+    except Exception as e:
+        print('Error:', e)
+
+
+if __name__ == '__main__':
+    mod = '/Users/yec/welab/ing/h5_model_monitor/h5_antifraud/model/xgb_h5_release_dump.m'
+    sav = '/Users/yec/welab/ing/h5_model_monitor/h5_antifraud/model/dump.raw.txt'
+    dump(mod, sav)
