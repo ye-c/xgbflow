@@ -55,6 +55,20 @@ def score_dist(score, save_as):
 def distribution_histogram(feature, label, data):
     '''
     new feature_dist
+
+    for f in feas:
+        bins, ret = report.benchmark_csi(df[f])
+        print(f)
+        print(ret)
+        label = [str(i) for i in ret.index.values]
+        print(label)
+        data = [
+            (f, ret.rate.tolist()),
+            ...
+        ]
+        print(data)
+        draw.distribution_histogram(f, label, data)
+
     '''
     size = len(label)
     total_width = 0.8

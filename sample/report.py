@@ -31,6 +31,7 @@ for c in feature:
 def benchmark_psi(dfc, bins=[], cutoff=5):
     '''
     dfc:    df.col
+    return: bins, dfc_bins_rate
     '''
     if not bins:
         maxv = dfc.max()

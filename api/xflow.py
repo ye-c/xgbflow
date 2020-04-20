@@ -111,6 +111,9 @@ def feature_importance(features, model):
 
 
 def top_status(label, score):
+    '''
+    columns=['TOP N', 'CutOff', '真欺诈', '总数', '准确率', '召回率']
+    '''
     index_map = {'95%': 'TOP 5%', '90%': 'TOP 10%', '85%': 'TOP 15%',
                  '80%': 'TOP 20%', '70%': 'TOP 30%', '50%': 'TOP 50%'}
     df = pd.DataFrame()
