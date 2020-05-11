@@ -6,14 +6,61 @@ from xgbflow.api import mod, draw
 from xgbflow.utils.markitdown import MarkitDown
 
 
-def classifier_train(data, classifier=None, do_eval=True):
+# def classifier_train(data, classifier=None, do_eval=True):
+#     '''
+#     data = [
+#         ('train', trn_x.values, trn_y),
+#         ('test', tet_x.values, tet_y),
+#         ('v1', vr1_x.values, vr1_y),
+#         ('v2', vr2_x.values, vr2_y)
+#     ]
+#     model = xflow.classifier_train(data)
+#     joblib.dump(model, 'model/xgb_h5_classifier.model')
+#     xflow.classifier_verify(model, data)
+#     '''
+#     if not classifier:
+#         classifier = xgb.XGBClassifier(
+#             max_depth=3,
+#             learning_rate=0.1,
+#             n_estimators=50,
+#             # verbosity=1,
+#             objective='binary:logistic',
+#             booster='gbtree',
+#             # n_jobs=1,
+#             # nthread=None,
+#             gamma=0.5,
+#             min_child_weight=2,
+#             max_delta_step=0,
+#             subsample=0.85,
+#             # colsample_bytree=1,
+#             # colsample_bylevel=1,
+#             # colsample_bynode=1,
+#             reg_alpha=30,
+#             reg_lambda=15,
+#             scale_pos_weight=3,
+#             # base_score=0.5,
+#             # random_state=0,
+#             seed=0,
+#             silent=1
+#         )
+#     n_train, x_train, y_train = data[0]
+#     eval_list = [(x, y) for n, x, y in data] if do_eval else None
+#     classifier.fit(x_train, y_train,
+#                    eval_set=eval_list,
+#                    eval_metric='auc',
+#                    # early_stopping_rounds=10,
+#                    )
+#     return classifier
+
+
+def classifier_train(data, classifier=None, label='y', do_eval=True):
     '''
-    data = [
-        ('train', trn_x.values, trn_y),
-        ('test', tet_x.values, tet_y),
-        ('v1', vr1_x.values, vr1_y),
-        ('v2', vr2_x.values, vr2_y)
-    ]
+    data = {
+        'train': trn_df,
+        'test': tet_df,
+        'v1': vr1_df,
+        'v2': vr2_d,
+    }
     model = xflow.classifier_train(data)
     joblib.dump(model, 'model/xgb_h5_classifier.model')
     xflow.classifier_verify(model, data)
@@ -43,28 +90,41 @@ def classifier_train(data, classifier=None, do_eval=True):
             seed=0,
             silent=1
         )
-    n_train, x_train, y_train = data[0]
-    eval_list = [(x, y) for n, x, y in data] if do_eval else None
-    classifier.fit(x_train, y_train,
-                   eval_set=eval_list,
-                   eval_metric='auc',
-                   # early_stopping_rounds=10,
-                   )
+    train_df = data['train']
+    x_train = train_df.drop([label], axis=1).values
+    y_train = train_df[label]
+    eval_list = [(df.drop([label], axis=1).values, df[label])
+                 for df in data.values()] if do_eval else None
+    classifier.fit(
+        x_train, y_train,
+        eval_set=eval_list,
+        eval_metric='auc',
+        # early_stopping_rounds=10,
+    )
     return classifier
 
 
-def classifier_verify(model, data, verify=None, draw_out=False, title='title'):
+def classifier_verify(model, data, label='y', verify=None,
+                      draw_out=False, title='title'):
     '''
-    data = [
-        ('train', trn_x.values, trn_y),
-        ('test', tet_x.values, tet_y),
-        ('v1', vr1_x.values, vr1_y),
-        ('v2', vr2_x.values, vr2_y)
-    ]
-    aklist, top_data, pltlist = xflow.classifier_verify(model, data, verify='v1', draw_out=True, title='H5 Model')
+    data = {
+        'train': trn_df,
+        'test': tet_df,
+        'v1': vr1_df,
+        'v2': vr2_d,
+    }
+    aklist, top_data, pltlist = xflow.classifier_verify(
+        model, data,
+        label='y',
+        verify='vrf1',
+        draw_out=True,
+        title='H5 Model'
+    )
     '''
     aklist, pltlist, top_data = [], [], []
-    for name, x, y in data:
+    for name, df in data.items():
+        x = df.drop([label], axis=1).values
+        y = df[label]
         y_pred = model.predict_proba(x)[:, 1]
         aucks, plts = calc_aucks(y, y_pred,
                                  is_draw=draw_out,
