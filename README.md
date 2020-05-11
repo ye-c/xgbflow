@@ -20,3 +20,18 @@ xgbflow
     ├── __init__.py
     └── markitdown.py   # markdown工具类
 ```
+
+## Quick start
+
+```
+import sys
+sys.path.append('/Users/yec/Codes')
+
+import pandas as pd
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+
+from xgbflow.api import xflow, draw, mod
+from xgbflow.utils.markitdown import MarkitDown
+from xgbflow.feature import analyse
+```
