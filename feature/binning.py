@@ -1,23 +1,19 @@
 import numpy as np
 import pandas as pd
+from xgbflow.feature import indicator
 
 
 def frequence(dfc, n=5):
     '''
     等频分箱
     '''
-    n = n - 1
+    # n = n - 1
     prec_list = [i / n for i in range(1, n)]
     desc = dfc.describe(percentiles=prec_list)
-    res = desc.to_dict()
-    res.pop('count')
-    res.pop('mean')
-    res.pop('std')
-    res.pop('min')
-    res.pop('max')
-    res = list(res.values())
-    res.insert(0, float('-inf'))
-    res.append(float('inf'))
+    # remove ['count', 'mean', 'std', 'min', 'max']
+    res = list(desc.values[4:-1])
+    # res.insert(0, float('-inf'))
+    # res.append(float('inf'))
     return res
 
 
@@ -28,11 +24,23 @@ def distance(dfc, n=5):
     n = n - 2
     maxv = dfc.max()
     minv = dfc.min()
-    step = int((maxv - minv) / n)
+    step = float((maxv - minv) / n)
     bins = [i for i in np.arange(minv, maxv, step)]
     bins.insert(0, float('-inf'))
     bins.append(float('inf'))
     return bins
+
+
+def bin_map(dfc, init_splite_points):
+    def package_bin(x, splite_points):
+        if x <= splite_points[0]:
+            return splite_points[0]
+        if x > splite_points[len(splite_points) - 1]:
+            return float('inf')
+        for i in range(len(splite_points) - 1):
+            if x > splite_points[i] and x <= splite_points[i + 1]:
+                return splite_points[i + 1]
+    return dfc.apply(package_bin, splite_points=init_splite_points)
 
 
 # 定义一个卡方分箱（可设置参数置信度水平与箱的个数）停止条件为大于置信水平且小于bin的数目
@@ -47,34 +55,24 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
     sample: 为抽样的数目（默认是不进行抽样），因为如果观测值过多运行会较慢
     '''
 
-    def package_bin(x, splite_points):
-        if x <= splite_points[0]:
-            return splite_points[0]
-        if x > splite_points[len(splite_points) - 1]:
-            return float('inf')
-        for i in range(len(splite_points) - 1):
-            if x > splite_points[i] and x <= splite_points[i + 1]:
-                return splite_points[i + 1]
-
     def groupby_split_bin(df, var, tar, bins, N=100, init_bin='frequence'):
-        df_group = df.groupby([var])[tar].count()
-        if len(df_group) <= N:
-            print(var, '类别变量')
-            return df_group
+        print('[%s] is continuous variable ...' % var)
         if init_bin == 'frequence':
             init_splite_points = frequence(df[var], N)
         else:
             init_splite_points = distance(df[var], N)
         init_splite_points = init_splite_points[1:-1]
-        df[var] = df[var].apply(package_bin, splite_points=init_splite_points)
+        df[var] = bin_map(df[var], init_splite_points)
         return df.groupby([var])[tar].count()
 
-    def load_data(df, var, tar):
-        res = groupby_split_bin(df, var, tar, bins, N=100, init_bin='frequence')
+    def group_data(df, var, tar, N=100):
+        df_group = df.groupby([var])[tar].count()
+        res = df_group if len(df_group) <= N \
+            else groupby_split_bin(df, var, tar, bins, N=100, init_bin='frequence')
         res = pd.DataFrame({'total_num': res})
         res['pos_class'] = df.groupby([var])[tar].sum()
-        res.reset_index(inplace=True)
         res['neg_class'] = res['total_num'] - res['pos_class']
+        res.reset_index(inplace=True)
         res = res.drop('total_num', axis=1)
         np_regroup = np.array(res)
         return np_regroup
@@ -143,7 +141,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             vf1 = np_regroup[chi_min_index - 1, 1]
             vf2 = np_regroup[chi_min_index - 1, 2]
 
-            if (chi_min_index == np_regroup.shape[0] - 1):  # 最小值试最后两个区间的时候
+            if (chi_min_index == np_regroup.shape[0] - 1):  # 最小值是最后两个区间的时候
                 # 计算合并后当前区间与前一个区间的卡方值并替换
                 chi_table[chi_min_index - 1] = (vf1 * v2 - vf2 * v1) ** 2 * (vf1 + vf2 + v1 + v2) / \
                     ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
@@ -163,8 +161,19 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
 
         return np_regroup
 
-    def pack_result(variable, np_regroup):
-        result_data = pd.DataFrame()  # 创建一个保存结果的数据框
+    def calc_woe_iv(np_result):
+        df_woe_iv = pd.DataFrame(np_result, columns=['cutoff', 'pos', 'neg'])
+        pos_all = sum(df_woe_iv['pos'])
+        neg_all = sum(df_woe_iv['neg'])
+        df_woe_iv['pos_rate'] = df_woe_iv['pos'] / pos_all
+        df_woe_iv['neg_rate'] = df_woe_iv['neg'] / neg_all
+        df_woe_iv['woe'] = df_woe_iv.apply(indicator.formula_woe, axis=1)
+        df_woe_iv['iv'] = df_woe_iv.apply(indicator.formula_iv, axis=1)
+        woe_dict = dict(zip(df_woe_iv['cutoff'], df_woe_iv['woe']))
+        return woe_dict, sum(df_woe_iv['iv']), df_woe_iv
+
+    def pack_result(variable, np_regroup, df_woe_iv):
+        result_data = pd.DataFrame()
         # 结果表第一列：变量名
         result_data['variable'] = [variable] * np_regroup.shape[0]
         list_temp = []
@@ -174,13 +183,16 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             elif i == np_regroup.shape[0] - 1:
                 x = '(%s, inf]' % str(np_regroup[i - 1, 0])
             else:
-                x = '(%s, %s]' % (str(np_regroup[i - 1, 0]), str(np_regroup[i, 0]))
+                x = '(%s, %s]' % \
+                    (str(np_regroup[i - 1, 0]), str(np_regroup[i, 0]))
             list_temp.append(x)
+        result_data['cutoff'] = np_regroup[:, 0]
         result_data['interval'] = list_temp  # 结果表第二列：区间
         result_data['count_0'] = np_regroup[:, 2]  # 结果表第三列：负样本数目
         result_data['count_1'] = np_regroup[:, 1]  # 结果表第四列：正样本数目
         result_data['ratio_1'] = np_regroup[:, 1] / \
             (np_regroup[:, 1] + np_regroup[:, 2])
+        result_data = pd.merge(result_data, df_woe_iv, on='cutoff')
         return result_data
 
     # 进行是否抽样操作
@@ -188,7 +200,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
         df = df.sample(n=sample)
 
     # 进行数据格式化录入
-    np_regroup = load_data(df, variable, flag)
+    np_regroup = group_data(df, variable, flag)
 
     # 处理连续没有正样本或负样本的区间，并进行区间的合并（以免卡方值计算报错）
     np_regroup = merge_zero_square(np_regroup)
@@ -199,7 +211,11 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
     # 把卡方值最小的两个区间进行合并（卡方分箱核心）
     np_result = chi_merge(np_regroup, chi_table, bins, confidenceVal)
 
-    # 把结果保存成一个数据框
-    result_data = pack_result(variable, np_result)
+    # 计算 woe iv
+    woe_dict, iv, df_woe_iv = calc_woe_iv(np_result)
 
-    return result_data
+    # 把结果保存成一个数据框
+    result_data = pack_result(variable, np_result, df_woe_iv)
+    bin_cut = list(result_data.cutoff)
+
+    return bin_cut, woe_dict, iv, result_data

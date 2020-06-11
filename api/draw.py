@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def auc(fpr, tpr, auc, ks, title, save_as):
+def auc(fpr, tpr, auc, ks, save_as, title='default'):
     fig = plt.figure(figsize=(8, 6))
     plt.title('Receiver Operating Characteristic - %s' % title)
     plt.plot(fpr, tpr, 'b',
