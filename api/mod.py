@@ -1,4 +1,4 @@
-from sklearn.externals import joblib
+import joblib
 from sklearn import metrics
 import xgboost as xgb
 import pandas as pd
@@ -16,6 +16,9 @@ def ks(label, pre):
 
 
 def predict_proba(model, data):
+    '''
+    data = np.array([[x1, x2, ...],])
+    '''
     if isinstance(model, str):
         model = joblib.load(model)
     y_pred = model.predict_proba(data)[:, 1]
