@@ -3,29 +3,28 @@ import pandas as pd
 from xgbflow.feature import indicator
 
 
-def frequence(dfc, n=5):
+def frequence(dfc, bin_num=5):
     '''
     等频分箱
     '''
-    # n = n - 1
-    prec_list = [i / n for i in range(1, n)]
-    desc = dfc.describe(percentiles=prec_list)
-    # remove ['count', 'mean', 'std', 'min', 'max']
-    res = list(desc.values[4:-1])
-    # res.insert(0, float('-inf'))
-    # res.append(float('inf'))
-    return res
+    percent_value = 1.0 / bin_num
+    percentile_rate = [i * percent_value for i in range(1, bin_num)]
+    percentile_rate.append(1.0)
+    cutlist = dfc.quantile(percentile_rate, interpolation="lower")
+    cutlist = cutlist.drop_duplicates(keep="last")
+    cutlist = [round(i, 6) for i in cutlist]
+    return cutlist
 
 
-def distance(dfc, n=5):
+def distance(dfc, bin_num=5):
     '''
     等宽（等距）分箱
     '''
-    n = n - 2
+    bin_num = bin_num - 2
     maxv = dfc.max()
     minv = dfc.min()
-    step = float((maxv - minv) / n)
-    bins = [i for i in np.arange(minv, maxv, step)]
+    step = float((maxv - minv) / bin_num)
+    bins = [round(i, 6) for i in np.arange(minv, maxv, step)]
     bins.insert(0, float('-inf'))
     bins.append(float('inf'))
     return bins
