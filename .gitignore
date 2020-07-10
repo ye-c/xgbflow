@@ -1,3 +1,11 @@
+# folder
+.idea
 .DS_Store
+
+# pycache
 __pycache__
 */__pycache__
+
+# py
+config.py
+tmp.py

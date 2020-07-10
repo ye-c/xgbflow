@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from xgbflow.feature import indicator
+from feature import indicator
 
 
 def frequence(dfc, bin_num=5):
@@ -39,6 +39,7 @@ def bin_map(dfc, init_splite_points):
         for i in range(len(splite_points) - 1):
             if x > splite_points[i] and x <= splite_points[i + 1]:
                 return splite_points[i + 1]
+
     return dfc.apply(package_bin, splite_points=init_splite_points)
 
 
@@ -113,7 +114,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             v3 = np_regroup[i + 1, 1]
             v4 = np_regroup[i + 1, 2]
             chi = (v1 * v4 - v2 * v3) ** 2 * (v1 + v2 + v3 + v4) / \
-                ((v1 + v2) * (v3 + v4) * (v1 + v3) * (v2 + v4))
+                  ((v1 + v2) * (v3 + v4) * (v1 + v3) * (v2 + v4))
             chi_table = np.append(chi_table, chi)
         return chi_table
 
@@ -143,7 +144,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             if (chi_min_index == np_regroup.shape[0] - 1):  # 最小值是最后两个区间的时候
                 # 计算合并后当前区间与前一个区间的卡方值并替换
                 chi_table[chi_min_index - 1] = (vf1 * v2 - vf2 * v1) ** 2 * (vf1 + vf2 + v1 + v2) / \
-                    ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
+                                               ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
                 # 删除替换前的卡方值
                 chi_table = np.delete(chi_table, chi_min_index, axis=0)
             else:
@@ -151,10 +152,10 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
                 v4 = np_regroup[chi_min_index + 1, 2]
                 # 计算合并后当前区间与前一个区间的卡方值并替换
                 chi_table[chi_min_index - 1] = (vf1 * v2 - vf2 * v1) ** 2 * (vf1 + vf2 + v1 + v2) / \
-                    ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
+                                               ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
                 # 计算合并后当前区间与后一个区间的卡方值并替换
                 chi_table[chi_min_index] = (v1 * v4 - v2 * v3) ** 2 * (v1 + v2 + v3 + v4) / \
-                    ((v1 + v2) * (v3 + v4) * (v1 + v3) * (v2 + v4))
+                                           ((v1 + v2) * (v3 + v4) * (v1 + v3) * (v2 + v4))
                 # 删除替换前的卡方值
                 chi_table = np.delete(chi_table, chi_min_index + 1, axis=0)
 
@@ -190,8 +191,8 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
         result_data['count_0'] = np_regroup[:, 2]  # 结果表第三列：负样本数目
         result_data['count_1'] = np_regroup[:, 1]  # 结果表第四列：正样本数目
         result_data['ratio_1'] = np_regroup[:, 1] / \
-            (np_regroup[:, 1] + np_regroup[:, 2])
-        result_data = pd.merge(result_data, df_woe_iv, on='cutoff')
+                                 (np_regroup[:, 1] + np_regroup[:, 2])
+        result_data = pd.merge(result_data[['variable', 'cutoff', 'interval']], df_woe_iv, how='left', on='cutoff')
         return result_data
 
     # 进行是否抽样操作

@@ -2,8 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from xgbflow.api import mod, draw
-from xgbflow.utils.markitdown import MarkitDown
+from api import mod, draw
+from utils.markitdown import MarkitDown
 
 
 # def classifier_train(data, classifier=None, do_eval=True):
