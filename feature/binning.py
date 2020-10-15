@@ -1,6 +1,36 @@
 import numpy as np
 import pandas as pd
-from feature import indicator
+from .indicator import formula_woe, formula_iv
+
+
+def common_bin(df, var, tar, alg='frequence', bin_num=10):
+    if alg == 'frequence':
+        init_splite_points = frequence(df[var], bin_num)
+    else:
+        init_splite_points = distance(df[var], bin_num)
+    df[var] = bin_map(df[var], init_splite_points)
+    df_sum = df.groupby([var])[tar].sum()
+    df_group = df.groupby([var])[tar].count()
+    result_data = pd.DataFrame()
+    result_data['variable'] = [var] * df_group.shape[0]
+    result_data['cutoff'] = df_group.index
+    result_data['interval'] = list2inter(df_group.index[:-1])
+    result_data['count'] = df_group.values
+    result_data['pos'] = df_sum.values
+    result_data['neg'] = result_data['count'] - result_data['pos']
+    result_data['pos_rate'] = result_data['pos'] / result_data['pos'].sum()
+    result_data['neg_rate'] = result_data['neg'] / result_data['neg'].sum()
+    result_data['woe'] = formula_woe(result_data)
+    result_data['iv'] = formula_iv(result_data)
+    return result_data, result_data['iv'].sum()
+
+
+def list2inter(ls):
+    ls = list(ls)
+    ls.insert(0, float('-inf'))
+    ls.append(float('inf'))
+    res = ['({}, {}]'.format(x, y) for x, y in zip(ls[:-1], ls[1:])]
+    return res
 
 
 def frequence(dfc, bin_num=5):
@@ -44,7 +74,7 @@ def bin_map(dfc, init_splite_points):
 
 
 # 定义一个卡方分箱（可设置参数置信度水平与箱的个数）停止条件为大于置信水平且小于bin的数目
-def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
+def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None, init_bin='frequence'):
     '''
     运行前需要 import pandas as pd 和 import numpy as np
     df:传入一个数据框仅包含一个需要卡方分箱的变量与正负样本标识（正样本为1，负样本为0）
@@ -68,12 +98,14 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
     def group_data(df, var, tar, N=100):
         df_group = df.groupby([var])[tar].count()
         res = df_group if len(df_group) <= N \
-            else groupby_split_bin(df, var, tar, bins, N=100, init_bin='frequence')
+            else groupby_split_bin(df, var, tar, bins, N, init_bin)
+        # print(res)
         res = pd.DataFrame({'total_num': res})
         res['pos_class'] = df.groupby([var])[tar].sum()
         res['neg_class'] = res['total_num'] - res['pos_class']
         res.reset_index(inplace=True)
         res = res.drop('total_num', axis=1)
+        # print(res)
         np_regroup = np.array(res)
         return np_regroup
 
@@ -99,6 +131,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
                 np_regroup = np.delete(np_regroup, i + 1, 0)
                 i = i - 1
             i = i + 1
+        # print(np_regroup)
         return np_regroup
 
     def calc_chi2(np_regroup):
@@ -126,7 +159,10 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             v1  v2
             v3  v4
             '''
-            if (len(chi_table) <= (bins - 1) and min(chi_table) >= confidenceVal):
+            # print(chi_table, bins)
+            # if len(chi_table) == 0:
+            #     break
+            if (0 < len(chi_table) <= (bins - 1) and min(chi_table) >= confidenceVal):
                 break
             # 找出卡方值最小的位置索引
             chi_min_index = np.argwhere(chi_table == min(chi_table))[0]
@@ -144,7 +180,8 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             if (chi_min_index == np_regroup.shape[0] - 1):  # 最小值是最后两个区间的时候
                 # 计算合并后当前区间与前一个区间的卡方值并替换
                 chi_table[chi_min_index - 1] = (vf1 * v2 - vf2 * v1) ** 2 * (vf1 + vf2 + v1 + v2) / \
-                                               ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
+                                               ((vf1 + vf2) * (v1 + v2)
+                                                * (vf1 + v1) * (vf2 + v2))
                 # 删除替换前的卡方值
                 chi_table = np.delete(chi_table, chi_min_index, axis=0)
             else:
@@ -152,13 +189,15 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
                 v4 = np_regroup[chi_min_index + 1, 2]
                 # 计算合并后当前区间与前一个区间的卡方值并替换
                 chi_table[chi_min_index - 1] = (vf1 * v2 - vf2 * v1) ** 2 * (vf1 + vf2 + v1 + v2) / \
-                                               ((vf1 + vf2) * (v1 + v2) * (vf1 + v1) * (vf2 + v2))
+                                               ((vf1 + vf2) * (v1 + v2)
+                                                * (vf1 + v1) * (vf2 + v2))
                 # 计算合并后当前区间与后一个区间的卡方值并替换
                 chi_table[chi_min_index] = (v1 * v4 - v2 * v3) ** 2 * (v1 + v2 + v3 + v4) / \
-                                           ((v1 + v2) * (v3 + v4) * (v1 + v3) * (v2 + v4))
+                                           ((v1 + v2) * (v3 + v4)
+                                            * (v1 + v3) * (v2 + v4))
                 # 删除替换前的卡方值
                 chi_table = np.delete(chi_table, chi_min_index + 1, axis=0)
-
+        # print(np_regroup)
         return np_regroup
 
     def calc_woe_iv(np_result):
@@ -167,8 +206,8 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
         neg_all = sum(df_woe_iv['neg'])
         df_woe_iv['pos_rate'] = df_woe_iv['pos'] / pos_all
         df_woe_iv['neg_rate'] = df_woe_iv['neg'] / neg_all
-        df_woe_iv['woe'] = df_woe_iv.apply(indicator.formula_woe, axis=1)
-        df_woe_iv['iv'] = df_woe_iv.apply(indicator.formula_iv, axis=1)
+        df_woe_iv['woe'] = df_woe_iv.apply(formula_woe, axis=1)
+        df_woe_iv['iv'] = df_woe_iv.apply(formula_iv, axis=1)
         woe_dict = dict(zip(df_woe_iv['cutoff'], df_woe_iv['woe']))
         return woe_dict, sum(df_woe_iv['iv']), df_woe_iv
 
@@ -188,11 +227,7 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None):
             list_temp.append(x)
         result_data['cutoff'] = np_regroup[:, 0]
         result_data['interval'] = list_temp  # 结果表第二列：区间
-        result_data['count_0'] = np_regroup[:, 2]  # 结果表第三列：负样本数目
-        result_data['count_1'] = np_regroup[:, 1]  # 结果表第四列：正样本数目
-        result_data['ratio_1'] = np_regroup[:, 1] / \
-                                 (np_regroup[:, 1] + np_regroup[:, 2])
-        result_data = pd.merge(result_data[['variable', 'cutoff', 'interval']], df_woe_iv, how='left', on='cutoff')
+        result_data = pd.merge(result_data, df_woe_iv, how='left', on='cutoff')
         return result_data
 
     # 进行是否抽样操作
