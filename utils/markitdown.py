@@ -12,6 +12,9 @@ class MarkitDown():
     def show(self):
         print(self.content)
 
+    def clear(self):
+        self.content = ''
+
     def set(self, txt):
         self.content = '%s\n\n%s' % (
             self.content, txt) if self.content else txt
@@ -69,3 +72,8 @@ class MarkitDown():
     def save(self, filename='markitdown.md'):
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(self.content)
+
+
+if __name__ == '__main__':
+    md = MarkitDown()
+    md.clear()

@@ -32,3 +32,9 @@ from xgbflow.api import xflow, draw, mod
 from xgbflow.utils.markitdown import MarkitDown
 from xgbflow.feature import analyse
 ```
+
+## Todo
+
+1. params search
+2. bin distribute
+3. topdata details

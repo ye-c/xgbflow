@@ -128,7 +128,7 @@ def classifier_verify(model, data, label='y', verify=None,
         y_pred = model.predict_proba(x)[:, 1]
         aucks, plts = calc_aucks(y, y_pred,
                                  is_draw=draw_out,
-                                 title=title,
+                                 title=name,
                                  save_as=name)
         aucks.insert(0, name)
         aklist.append(aucks)
@@ -170,15 +170,15 @@ def feature_importance(features, model):
     return imp
 
 
-def top_status(label, score):
+def top_status(label_list, score_list):
     '''
     columns=['TOP N', 'CutOff', '真欺诈', '总数', '准确率', '召回率']
     '''
     index_map = {'95%': 'TOP 5%', '90%': 'TOP 10%', '85%': 'TOP 15%',
                  '80%': 'TOP 20%', '70%': 'TOP 30%', '50%': 'TOP 50%'}
     df = pd.DataFrame()
-    df['score'] = score
-    df['label'] = label
+    df['label'] = label_list
+    df['score'] = score_list
     bad_num = df[df.label == 1].shape[0]
     desc = df.score.describe(percentiles=[0.7, 0.8, 0.85, 0.9, 0.95])
     desc = desc[4:10]

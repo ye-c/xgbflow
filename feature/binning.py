@@ -204,6 +204,8 @@ def chiMerge(df, variable, flag, bins=10, confidenceVal=3.841, sample=None, init
         df_woe_iv = pd.DataFrame(np_result, columns=['cutoff', 'pos', 'neg'])
         pos_all = sum(df_woe_iv['pos'])
         neg_all = sum(df_woe_iv['neg'])
+        df_woe_iv['bin_rate'] = (df_woe_iv['pos'] + df_woe_iv['neg']) / (pos_all + neg_all)
+        df_woe_iv['bin_pos_rate'] = df_woe_iv['pos'] / (df_woe_iv['pos'] + df_woe_iv['neg'])
         df_woe_iv['pos_rate'] = df_woe_iv['pos'] / pos_all
         df_woe_iv['neg_rate'] = df_woe_iv['neg'] / neg_all
         df_woe_iv['woe'] = df_woe_iv.apply(formula_woe, axis=1)
